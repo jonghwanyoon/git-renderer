@@ -1,5 +1,7 @@
 # Git Renderer
 
+[한국어](README.ko.md) | English
+
 Render web content from any Git repository directly in the browser — no server required.
 
 A single HTML file that fetches HTML/CSS/JS/images from GitHub or GitLab repositories via their public APIs, resolves all resource references to blob URLs, and renders the result in an iframe.
@@ -23,7 +25,7 @@ git-renderer.html#https://github.com/user/repo/tree/main/docs
 3. Share the link:
 
 ```
-https://username.github.io/repo/git-renderer.html#https://github.com/target-user/target-repo
+https://username.github.io/repo/dist/git-renderer.html#https://github.com/target-user/target-repo
 ```
 
 Anyone clicking the link sees the rendered content instantly. No backend needed.
@@ -40,6 +42,16 @@ https://gitlab.example.com/group/project
 https://gitlab.example.com/group/project/-/tree/main/docs
 ```
 
+## Supported Content
+
+| Type | Supported |
+|------|-----------|
+| Static HTML/CSS/JS sites | Yes |
+| Hexo, Hugo (pre-built output in repo) | Yes |
+| Images, fonts, media | Yes |
+| In-site navigation (links between pages) | Yes |
+| Jekyll/Hugo source (requires build) | No |
+
 ## Private Repositories
 
 Click the **Token** button and save an API token per domain:
@@ -47,7 +59,7 @@ Click the **Token** button and save an API token per domain:
 - **GitHub**: Personal Access Token (`ghp_xxxx`)
 - **GitLab**: Personal Access Token (`glpat-xxxx`)
 
-Tokens are stored in `localStorage` (never sent anywhere except the respective API).
+Tokens are stored in `localStorage` and only sent to the respective Git API. No data is ever sent to any third party.
 
 ## How It Works
 
@@ -55,17 +67,26 @@ Tokens are stored in `localStorage` (never sent anywhere except the respective A
 2. Fetch the file tree via Git API
 3. Find the entry HTML file (`index.html` or first `.html`)
 4. Fetch the HTML content and parse it with `DOMParser`
-5. Collect all resource references (`<link>`, `<script>`, `<img>`, CSS `url()`, etc.)
+5. Collect all resource references (`<link>`, `<script>`, `<img>`, CSS `url()`, `@import`, inline styles, etc.)
 6. Fetch each resource via Git API → create `Blob` → `URL.createObjectURL()`
-7. Replace original references with blob URLs
-8. Inject navigation script for in-iframe link handling
-9. Create a blob URL for the final HTML and set it as `iframe.src`
+7. Recursively resolve CSS `url()` and `@import` references
+8. Replace original references with blob URLs
+9. Inject navigation script for in-iframe link handling
+10. Create a blob URL for the final HTML and set it as `iframe.src`
+
+## Security
+
+- **Zero external dependencies**: No CDN, analytics, tracking, or third-party scripts
+- **Token isolation**: API tokens are only sent to their respective Git provider domain
+- **iframe sandboxing**: Rendered content runs in a sandboxed iframe
+- **postMessage validation**: Navigation messages are only accepted from the preview iframe (`e.source` check)
+- **100% client-side**: All processing happens in the browser. No data leaves your machine except Git API calls.
 
 ## Build
 
 ```bash
 bash build.sh
-# → dist/git-renderer.html (single file, ~34KB)
+# → dist/git-renderer.html (single file, ~36KB)
 ```
 
 The build script inlines all CSS and JS into one self-contained HTML file.
