@@ -49,9 +49,9 @@
 
     window.addEventListener('hashchange', checkHashAndRender);
 
-    // Listen for navigation messages from iframe
+    // Listen for navigation messages from iframe (only from our preview iframe)
     window.addEventListener('message', (e) => {
-      if (e.data && e.data.type === 'navigate') {
+      if (e.data && e.data.type === 'navigate' && e.source === previewFrame.contentWindow) {
         handleIframeNavigation(e.data.href);
       }
     });

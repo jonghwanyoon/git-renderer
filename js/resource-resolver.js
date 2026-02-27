@@ -284,7 +284,9 @@ const ResourceResolver = (function () {
         if (!href || href.startsWith('http://') || href.startsWith('https://') ||
             href.startsWith('mailto:') || href.startsWith('#') || href.startsWith('javascript:')) return;
         e.preventDefault();
-        parent.postMessage({ type: 'navigate', href: href }, '*');
+        if (parent !== window) {
+          parent.postMessage({ type: 'navigate', href: href }, '*');
+        }
       });
     `;
     doc.body.appendChild(navScript);
