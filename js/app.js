@@ -22,6 +22,7 @@
 
   // Current render context (for in-iframe navigation)
   let currentCtx = null;
+  let currentHtmlDir = ''; // directory of the currently rendered HTML file
 
   // ── Init ──
 
@@ -202,6 +203,11 @@
     const htmlBlob = new Blob([resolvedHtml], { type: 'text/html' });
     const htmlUrl = URL.createObjectURL(htmlBlob);
 
+    // Track current page directory for relative link resolution
+    currentHtmlDir = filePath.lastIndexOf('/') >= 0
+      ? filePath.substring(0, filePath.lastIndexOf('/'))
+      : '';
+
     welcomeScreen.classList.add('hidden');
     previewFrame.classList.remove('hidden');
     previewFrame.src = htmlUrl;
@@ -219,25 +225,60 @@
     if (!currentCtx) return;
 
     try {
-      // Resolve the href relative to basePath
-      const targetPath = ResourceResolver.normalizePath(
-        currentCtx.basePath ? currentCtx.basePath + '/' + href : href
-      );
+      // Resolve path based on whether it's absolute or relative
+      let targetPath;
+      if (href.startsWith('/')) {
+        // Absolute path from repo root (e.g., /archives, /css/style.css)
+        targetPath = ResourceResolver.normalizePath(
+          currentCtx.basePath ? currentCtx.basePath + href : href.slice(1)
+        );
+      } else {
+        // Relative path from current page's directory
+        targetPath = ResourceResolver.normalizePath(
+          currentHtmlDir ? currentHtmlDir + '/' + href : href
+        );
+      }
 
-      if (!currentCtx.fileTree.has(targetPath)) {
+      // Try to find the file, with directory index fallback
+      const resolved = resolveFilePath(targetPath, currentCtx.fileTree);
+      if (!resolved) {
         showError(`파일을 찾을 수 없습니다: ${targetPath}`);
         return;
       }
 
       renderBtn.disabled = true;
       renderBtn.textContent = '로딩...';
-      await renderHtmlFile(targetPath, currentCtx);
+      await renderHtmlFile(resolved, currentCtx);
     } catch (err) {
       showError(err.message);
     } finally {
       renderBtn.disabled = false;
       renderBtn.textContent = 'Render';
     }
+  }
+
+  /**
+   * Resolve a path to an actual file in the tree, with directory index fallback
+   */
+  function resolveFilePath(targetPath, fileTree) {
+    // Direct match
+    if (fileTree.has(targetPath)) return targetPath;
+
+    // Try with /index.html (directory index)
+    const withIndex = targetPath + '/index.html';
+    if (fileTree.has(withIndex)) return withIndex;
+
+    // Try appending .html
+    const withHtml = targetPath + '.html';
+    if (fileTree.has(withHtml)) return withHtml;
+
+    // Try stripping trailing slash then adding /index.html
+    if (targetPath.endsWith('/')) {
+      const trimmed = targetPath.slice(0, -1);
+      if (fileTree.has(trimmed + '/index.html')) return trimmed + '/index.html';
+    }
+
+    return null;
   }
 
   function findEntryFile(blobs, basePath) {
