@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Git Renderer</title>
+  <style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f5f5f5;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ── Top bar ── */
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #1e1e2e;
+  color: #cdd6f4;
+  flex-shrink: 0;
+}
+
+.top-bar .logo {
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+  color: #89b4fa;
+}
+
+#url-input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #45475a;
+  border-radius: 4px;
+  background: #313244;
+  color: #cdd6f4;
+  font-size: 13px;
+  outline: none;
+  min-width: 0;
+}
+
+#url-input:focus {
+  border-color: #89b4fa;
+}
+
+#url-input::placeholder {
+  color: #6c7086;
+}
+
+#render-btn {
+  padding: 6px 16px;
+  background: #89b4fa;
+  color: #1e1e2e;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+#render-btn:hover {
+  background: #74c7ec;
+}
+
+#render-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#settings-toggle {
+  padding: 6px 10px;
+  background: transparent;
+  color: #6c7086;
+  border: 1px solid #45475a;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+#settings-toggle:hover {
+  color: #cdd6f4;
+  border-color: #6c7086;
+}
+
+/* ── Settings panel ── */
+
+.settings-panel {
+  display: none;
+  padding: 12px;
+  background: #181825;
+  border-bottom: 1px solid #313244;
+  flex-shrink: 0;
+}
+
+.settings-panel.open {
+  display: block;
+}
+
+.settings-panel h3 {
+  font-size: 13px;
+  color: #a6adc8;
+  margin-bottom: 8px;
+}
+
+.token-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.token-row label {
+  font-size: 12px;
+  color: #6c7086;
+  min-width: 120px;
+}
+
+.token-row input {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid #45475a;
+  border-radius: 3px;
+  background: #313244;
+  color: #cdd6f4;
+  font-size: 12px;
+  font-family: monospace;
+  outline: none;
+}
+
+.token-row input:focus {
+  border-color: #89b4fa;
+}
+
+.token-row button {
+  padding: 4px 10px;
+  background: #45475a;
+  color: #cdd6f4;
+  border: none;
+  border-radius: 3px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.token-row button:hover {
+  background: #585b70;
+}
+
+/* ── Status bar ── */
+
+.status-bar {
+  display: none;
+  padding: 4px 12px;
+  background: #313244;
+  font-size: 12px;
+  color: #a6adc8;
+  flex-shrink: 0;
+}
+
+.status-bar.visible {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-bar .progress {
+  flex: 1;
+  height: 3px;
+  background: #45475a;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.status-bar .progress-fill {
+  height: 100%;
+  background: #89b4fa;
+  border-radius: 2px;
+  transition: width 0.2s;
+  width: 0%;
+}
+
+/* ── Error panel ── */
+
+.error-panel {
+  display: none;
+  padding: 10px 12px;
+  background: #45273a;
+  color: #f38ba8;
+  font-size: 13px;
+  border-bottom: 1px solid #f38ba8;
+  flex-shrink: 0;
+}
+
+.error-panel.visible {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.error-panel .error-msg {
+  flex: 1;
+}
+
+.error-panel .close-btn {
+  background: none;
+  border: none;
+  color: #f38ba8;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+/* ── Preview iframe ── */
+
+#preview-frame {
+  flex: 1;
+  border: none;
+  background: #fff;
+  width: 100%;
+}
+
+/* ── Welcome screen ── */
+
+.welcome {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #6c7086;
+  padding: 40px;
+}
+
+.welcome h2 {
+  font-size: 20px;
+  color: #cdd6f4;
+  margin-bottom: 12px;
+}
+
+.welcome p {
+  font-size: 14px;
+  line-height: 1.6;
+  max-width: 500px;
+}
+
+.welcome code {
+  background: #313244;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 13px;
+  color: #89b4fa;
+}
+
+.hidden {
+  display: none !important;
+}
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Top bar -->
+    <div class="top-bar">
+      <span class="logo">Git Renderer</span>
+      <input
+        id="url-input"
+        type="text"
+        placeholder="Git 저장소 URL을 입력하세요 (예: https://gitlab.company.com/group/project/-/tree/main/docs)"
+        spellcheck="false"
+        autocomplete="off"
+      >
+      <button id="render-btn">Render</button>
+      <button id="settings-toggle">Token</button>
+    </div>
+
+    <!-- Settings panel (collapsible) -->
+    <div id="settings-panel" class="settings-panel">
+      <h3>API Token (도메인별 저장)</h3>
+      <div class="token-row">
+        <label>Domain:</label>
+        <input id="token-domain" type="text" placeholder="gitlab.company.com">
+      </div>
+      <div class="token-row">
+        <label>Token:</label>
+        <input id="token-input" type="password" placeholder="glpat-xxxx 또는 ghp_xxxx">
+        <button id="token-save">Save</button>
+      </div>
+    </div>
+
+    <!-- Status bar -->
+    <div id="status-bar" class="status-bar">
+      <span id="status-text"></span>
+      <div class="progress">
+        <div id="progress-fill" class="progress-fill"></div>
+      </div>
+    </div>
+
+    <!-- Error panel -->
+    <div id="error-panel" class="error-panel">
+      <span id="error-msg" class="error-msg"></span>
+      <button id="error-close" class="close-btn">&times;</button>
+    </div>
+
+    <!-- Welcome screen -->
+    <div id="welcome" class="welcome">
+      <div>
+        <h2>Git Renderer</h2>
+        <p>
+          Git 저장소의 웹 콘텐츠를 바로 렌더링합니다.<br>
+          위 입력란에 GitLab 또는 GitHub URL을 입력하세요.<br><br>
+          URL 형식: <code>#https://gitlab.company.com/group/project/-/tree/main/docs</code><br>
+          브라우저 단축키: <code>gr https://gitlab.company.com/...</code>
+        </p>
+      </div>
+    </div>
+
+    <!-- Preview iframe (hidden until render) -->
+    <iframe
+      id="preview-frame"
+      class="hidden"
+      sandbox="allow-scripts allow-same-origin allow-forms"
+    ></iframe>
+  </div>
+
+  <script>
+// MIME type map: file extension → Content-Type
+const MIME_TYPES = {
+  // HTML
+  'html': 'text/html',
+  'htm': 'text/html',
+  // CSS
+  'css': 'text/css',
+  // JavaScript
+  'js': 'application/javascript',
+  'mjs': 'application/javascript',
+  // JSON
+  'json': 'application/json',
+  // Images
+  'png': 'image/png',
+  'jpg': 'image/jpeg',
+  'jpeg': 'image/jpeg',
+  'gif': 'image/gif',
+  'svg': 'image/svg+xml',
+  'ico': 'image/x-icon',
+  'webp': 'image/webp',
+  'avif': 'image/avif',
+  // Fonts
+  'woff': 'font/woff',
+  'woff2': 'font/woff2',
+  'ttf': 'font/ttf',
+  'otf': 'font/otf',
+  'eot': 'application/vnd.ms-fontobject',
+  // Media
+  'mp4': 'video/mp4',
+  'webm': 'video/webm',
+  'mp3': 'audio/mpeg',
+  'ogg': 'audio/ogg',
+  // Documents
+  'pdf': 'application/pdf',
+  'xml': 'application/xml',
+  'txt': 'text/plain',
+  'md': 'text/plain',
+  'csv': 'text/csv',
+  // Data
+  'wasm': 'application/wasm',
+};
+
+// Binary file extensions (skip UTF-8 text decoding)
+const BINARY_EXTENSIONS = new Set([
+  'png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'ico',
+  'woff', 'woff2', 'ttf', 'otf', 'eot',
+  'mp4', 'webm', 'mp3', 'ogg',
+  'pdf', 'wasm', 'zip', 'gz',
+]);
+
+function getMimeType(filePath) {
+  const ext = filePath.split('.').pop().toLowerCase();
+  return MIME_TYPES[ext] || 'application/octet-stream';
+}
+
+function isBinary(filePath) {
+  const ext = filePath.split('.').pop().toLowerCase();
+  return BINARY_EXTENSIONS.has(ext);
+}
+
+/**
+ * Git URL Parser - GitLab/GitHub auto-detection based on hostname
+ *
+ * Supported URL formats:
+ *   GitLab: https://gitlab.company.com/group/project/-/tree/main/docs
+ *   GitLab: https://gitlab.company.com/group/subgroup/project/-/tree/main
+ *   GitLab: https://gitlab.company.com/group/project (root)
+ *   GitHub: https://github.com/user/repo/tree/main/docs
+ *   GitHub: https://github.com/user/repo (root)
+ */
+
+function parseGitUrl(url) {
+  url = url.trim();
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    throw new Error('올바른 Git 저장소 URL을 입력하세요');
+  }
+
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error('올바른 Git 저장소 URL을 입력하세요');
+  }
+
+  const origin = parsed.origin;
+  const hostname = parsed.hostname;
+  const provider = hostname.includes('github.com') ? 'github' : 'gitlab';
+  const pathParts = parsed.pathname.replace(/^\/+|\/+$/g, '').split('/').filter(Boolean);
+
+  if (pathParts.length < 2) {
+    throw new Error('올바른 Git 저장소 URL을 입력하세요');
+  }
+
+  if (provider === 'github') {
+    return parseGitHubUrl(origin, pathParts);
+  }
+  return parseGitLabUrl(origin, pathParts);
+}
+
+function parseGitHubUrl(origin, parts) {
+  // Format: /owner/repo[/tree/branch/path...]
+  const owner = parts[0];
+  const repo = parts[1];
+  let branch = null;
+  let path = '';
+
+  if (parts.length > 3 && parts[2] === 'tree') {
+    branch = parts[3];
+    path = parts.slice(4).join('/');
+  } else if (parts.length > 3 && parts[2] === 'blob') {
+    branch = parts[3];
+    path = parts.slice(4).join('/');
+  }
+
+  return { provider: 'github', origin, owner, repo, branch, path };
+}
+
+function parseGitLabUrl(origin, parts) {
+  // GitLab URLs can have nested groups: /group/subgroup/.../project[/-/tree/branch/path]
+  const treeIdx = parts.indexOf('-');
+
+  if (treeIdx >= 2) {
+    // Has /-/tree/branch/path or /-/blob/branch/path
+    const owner = parts.slice(0, treeIdx - 1).join('/');
+    const repo = parts[treeIdx - 1];
+    let branch = null;
+    let path = '';
+
+    if (parts.length > treeIdx + 2 && (parts[treeIdx + 1] === 'tree' || parts[treeIdx + 1] === 'blob')) {
+      branch = parts[treeIdx + 2];
+      path = parts.slice(treeIdx + 3).join('/');
+    }
+
+    return { provider: 'gitlab', origin, owner, repo, branch, path };
+  }
+
+  // No /-/ marker: /group[/subgroup...]/project
+  const owner = parts.slice(0, -1).join('/');
+  const repo = parts[parts.length - 1];
+
+  return { provider: 'gitlab', origin, owner, repo, branch: null, path: '' };
+}
+
+/**
+ * Unified Git API client for GitLab and GitHub
+ */
+class GitAPI {
+  constructor(provider, origin, token) {
+    this.provider = provider;
+    this.origin = origin;
+    this.token = token;
+    this._projectId = null; // GitLab project ID cache
+    this._rateLimitRemaining = null;
+    this._rateLimitReset = null;
+  }
+
+  _headers() {
+    const h = {};
+    if (this.token) {
+      if (this.provider === 'github') {
+        h['Authorization'] = `Bearer ${this.token}`;
+      } else {
+        h['Private-Token'] = this.token;
+      }
+    }
+    return h;
+  }
+
+  async _fetch(url) {
+    const resp = await fetch(url, { headers: this._headers() });
+
+    // Track rate limit info
+    if (resp.headers.has('x-ratelimit-remaining')) {
+      this._rateLimitRemaining = parseInt(resp.headers.get('x-ratelimit-remaining'), 10);
+    }
+    if (resp.headers.has('x-ratelimit-reset')) {
+      this._rateLimitReset = parseInt(resp.headers.get('x-ratelimit-reset'), 10);
+    }
+
+    if (!resp.ok) {
+      if (resp.status === 401 || resp.status === 403) {
+        throw new ApiError(`토큰이 필요합니다. 설정에서 ${new URL(url).hostname}의 토큰을 입력하세요`, resp.status);
+      }
+      if (resp.status === 404) {
+        throw new ApiError('저장소를 찾을 수 없습니다', resp.status);
+      }
+      if (resp.status === 429) {
+        const resetTime = this._rateLimitReset
+          ? new Date(this._rateLimitReset * 1000).toLocaleTimeString()
+          : '잠시';
+        throw new ApiError(`API 요청 제한 도달. ${resetTime} 후 재시도`, resp.status);
+      }
+      throw new ApiError(`API 오류: ${resp.status} ${resp.statusText}`, resp.status);
+    }
+
+    return resp;
+  }
+
+  // ── GitLab helpers ──
+
+  async _getGitLabProjectId(owner, repo) {
+    if (this._projectId) return this._projectId;
+    const encodedPath = encodeURIComponent(`${owner}/${repo}`);
+    const resp = await this._fetch(`${this.origin}/api/v4/projects/${encodedPath}`);
+    const data = await resp.json();
+    this._projectId = data.id;
+    return data.id;
+  }
+
+  async _getGitLabTree(owner, repo, branch) {
+    const projectId = await this._getGitLabProjectId(owner, repo);
+    const items = [];
+    let page = 1;
+
+    while (true) {
+      const url = `${this.origin}/api/v4/projects/${projectId}/repository/tree?recursive=true&ref=${encodeURIComponent(branch)}&per_page=100&page=${page}`;
+      const resp = await this._fetch(url);
+      const data = await resp.json();
+      if (data.length === 0) break;
+
+      for (const item of data) {
+        items.push({
+          path: item.path,
+          sha: item.id,
+          type: item.type === 'tree' ? 'tree' : 'blob',
+        });
+      }
+
+      // Check pagination
+      const nextPage = resp.headers.get('x-next-page');
+      if (!nextPage || nextPage === '') break;
+      page = parseInt(nextPage, 10);
+    }
+
+    return items;
+  }
+
+  async _getGitLabBlob(owner, repo, sha) {
+    const projectId = await this._getGitLabProjectId(owner, repo);
+    const url = `${this.origin}/api/v4/projects/${projectId}/repository/blobs/${sha}/raw`;
+    const resp = await this._fetch(url);
+    const buffer = await resp.arrayBuffer();
+    return { raw: buffer };
+  }
+
+  // ── GitHub helpers ──
+
+  async _getGitHubTree(owner, repo, branch) {
+    const url = `${this.origin.replace('github.com', 'api.github.com')}/repos/${owner}/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`;
+    const resp = await this._fetch(url);
+    const data = await resp.json();
+
+    if (data.truncated) {
+      console.warn('GitHub tree response was truncated — some files may be missing');
+    }
+
+    return (data.tree || []).map(item => ({
+      path: item.path,
+      sha: item.sha,
+      type: item.type === 'tree' ? 'tree' : 'blob',
+      size: item.size,
+    }));
+  }
+
+  async _getGitHubBlob(owner, repo, sha) {
+    const url = `${this.origin.replace('github.com', 'api.github.com')}/repos/${owner}/${repo}/git/blobs/${sha}`;
+    const resp = await this._fetch(url);
+    const data = await resp.json();
+    // GitHub returns base64-encoded content
+    return { content: data.content, encoding: data.encoding };
+  }
+
+  // ── Public interface ──
+
+  async getDefaultBranch(owner, repo) {
+    if (this.provider === 'gitlab') {
+      const projectId = await this._getGitLabProjectId(owner, repo);
+      const resp = await this._fetch(`${this.origin}/api/v4/projects/${projectId}`);
+      const data = await resp.json();
+      return data.default_branch;
+    }
+
+    // GitHub
+    const apiOrigin = this.origin.replace('github.com', 'api.github.com');
+    const resp = await this._fetch(`${apiOrigin}/repos/${owner}/${repo}`);
+    const data = await resp.json();
+    return data.default_branch;
+  }
+
+  async getTree(owner, repo, branch) {
+    if (this.provider === 'gitlab') {
+      return this._getGitLabTree(owner, repo, branch);
+    }
+    return this._getGitHubTree(owner, repo, branch);
+  }
+
+  async getBlob(owner, repo, sha) {
+    if (this.provider === 'gitlab') {
+      return this._getGitLabBlob(owner, repo, sha);
+    }
+    return this._getGitHubBlob(owner, repo, sha);
+  }
+
+  getRateLimitInfo() {
+    return {
+      remaining: this._rateLimitRemaining,
+      resetAt: this._rateLimitReset ? new Date(this._rateLimitReset * 1000) : null,
+    };
+  }
+}
+
+class ApiError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
+/**
+ * Resource Resolver - resolves HTML/CSS resource references to blob URLs
+ * Fetches resources via Git API and replaces references with blob: URLs
+ */
+
+const ResourceResolver = (function () {
+  // Cache: "owner/repo/sha" → blob URL
+  const blobUrlCache = new Map();
+
+  /**
+   * Normalize a file path (resolve . and ..)
+   */
+  function normalizePath(path) {
+    const parts = path.split('/');
+    const normalized = [];
+    for (const part of parts) {
+      if (part === '.' || part === '') continue;
+      if (part === '..') {
+        normalized.pop();
+      } else {
+        normalized.push(part);
+      }
+    }
+    return normalized.join('/');
+  }
+
+  /**
+   * Resolve a relative URL against a base directory path
+   */
+  function resolveUrl(ref, baseDir) {
+    if (ref.startsWith('/')) {
+      return normalizePath(ref.slice(1));
+    }
+    if (baseDir) {
+      return normalizePath(baseDir + '/' + ref);
+    }
+    return normalizePath(ref);
+  }
+
+  /**
+   * Get directory portion of a path
+   */
+  function dirName(path) {
+    const idx = path.lastIndexOf('/');
+    return idx >= 0 ? path.substring(0, idx) : '';
+  }
+
+  /**
+   * Decode a Git blob response into an ArrayBuffer
+   */
+  function decodeBlobData(blobData) {
+    if (blobData.raw) {
+      // GitLab: already an ArrayBuffer
+      return blobData.raw;
+    }
+    // GitHub: base64-encoded
+    const binaryString = atob(blobData.content.replace(/\n/g, ''));
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes.buffer;
+  }
+
+  /**
+   * Fetch a file from Git and return a blob URL
+   */
+  async function fetchAsBlobUrl(filePath, fileTree, api, owner, repo) {
+    const sha = fileTree.get(filePath);
+    if (!sha) return null;
+
+    const cacheKey = `${owner}/${repo}/${sha}`;
+    if (blobUrlCache.has(cacheKey)) {
+      return blobUrlCache.get(cacheKey);
+    }
+
+    const blobData = await api.getBlob(owner, repo, sha);
+    const buffer = decodeBlobData(blobData);
+    const mime = getMimeType(filePath);
+    const blob = new Blob([buffer], { type: mime });
+    const url = URL.createObjectURL(blob);
+
+    blobUrlCache.set(cacheKey, url);
+    return url;
+  }
+
+  /**
+   * Fetch a file as text from Git
+   */
+  async function fetchAsText(filePath, fileTree, api, owner, repo) {
+    const sha = fileTree.get(filePath);
+    if (!sha) return null;
+
+    const blobData = await api.getBlob(owner, repo, sha);
+    const buffer = decodeBlobData(blobData);
+    return new TextDecoder('utf-8').decode(buffer);
+  }
+
+  /**
+   * Resolve CSS url() and @import references to blob URLs
+   */
+  async function resolveCss(cssText, cssDir, fileTree, api, owner, repo) {
+    // Collect all url(...) references
+    const urlRegex = /url\(\s*(['"]?)([^'")]+)\1\s*\)/g;
+    const imports = [];
+    const urlRefs = [];
+    let match;
+
+    // Collect @import
+    const importRegex = /@import\s+(?:url\(\s*(['"]?)([^'")]+)\1\s*\)|(['"])([^'"]+)\3)\s*;/g;
+    while ((match = importRegex.exec(cssText)) !== null) {
+      const ref = match[2] || match[4];
+      if (ref && !ref.startsWith('data:') && !ref.startsWith('http://') && !ref.startsWith('https://')) {
+        imports.push({ full: match[0], ref });
+      }
+    }
+
+    // Resolve @import recursively
+    for (const imp of imports) {
+      const resolved = resolveUrl(imp.ref, cssDir);
+      const importedCss = await fetchAsText(resolved, fileTree, api, owner, repo);
+      if (importedCss) {
+        const importDir = dirName(resolved);
+        const resolvedCss = await resolveCss(importedCss, importDir, fileTree, api, owner, repo);
+        cssText = cssText.replace(imp.full, resolvedCss);
+      }
+    }
+
+    // Collect url() references (after import resolution)
+    while ((match = urlRegex.exec(cssText)) !== null) {
+      const ref = match[2];
+      if (ref && !ref.startsWith('data:') && !ref.startsWith('blob:') && !ref.startsWith('http://') && !ref.startsWith('https://') && !ref.startsWith('#')) {
+        urlRefs.push({ full: match[0], quote: match[1], ref });
+      }
+    }
+
+    // Resolve url() references
+    for (const urlRef of urlRefs) {
+      const resolved = resolveUrl(urlRef.ref, cssDir);
+      const blobUrl = await fetchAsBlobUrl(resolved, fileTree, api, owner, repo);
+      if (blobUrl) {
+        cssText = cssText.replace(urlRef.full, `url(${urlRef.quote}${blobUrl}${urlRef.quote})`);
+      }
+    }
+
+    return cssText;
+  }
+
+  /**
+   * Resolve all resource references in an HTML string to blob URLs
+   *
+   * @param {string} htmlString - Raw HTML content
+   * @param {string} basePath - Directory path of the HTML file in the repo
+   * @param {Map} fileTree - Map of path → sha
+   * @param {GitAPI} api - Git API client
+   * @param {string} owner - Repo owner
+   * @param {string} repo - Repo name
+   * @param {function} onProgress - Progress callback(loaded, total, path)
+   * @returns {string} HTML with all references replaced by blob URLs
+   */
+  async function resolveHtml(htmlString, basePath, fileTree, api, owner, repo, onProgress) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlString, 'text/html');
+
+    // Collect all resource elements
+    const tasks = [];
+
+    // <link rel="stylesheet" href="..."> and <link rel="icon" href="...">
+    doc.querySelectorAll('link[href]').forEach(el => {
+      const rel = (el.getAttribute('rel') || '').toLowerCase();
+      if (rel === 'stylesheet' || rel === 'icon' || rel === 'shortcut icon' || rel === 'preload') {
+        const href = el.getAttribute('href');
+        if (href && !href.startsWith('data:') && !href.startsWith('http://') && !href.startsWith('https://')) {
+          tasks.push({ el, attr: 'href', ref: href, isCSS: rel === 'stylesheet' });
+        }
+      }
+    });
+
+    // <script src="...">
+    doc.querySelectorAll('script[src]').forEach(el => {
+      const src = el.getAttribute('src');
+      if (src && !src.startsWith('data:') && !src.startsWith('http://') && !src.startsWith('https://')) {
+        tasks.push({ el, attr: 'src', ref: src, isCSS: false });
+      }
+    });
+
+    // <img src="...">
+    doc.querySelectorAll('img[src]').forEach(el => {
+      const src = el.getAttribute('src');
+      if (src && !src.startsWith('data:') && !src.startsWith('http://') && !src.startsWith('https://')) {
+        tasks.push({ el, attr: 'src', ref: src, isCSS: false });
+      }
+    });
+
+    // <video src="...">, <audio src="...">, <source src="...">
+    doc.querySelectorAll('video[src], audio[src], source[src]').forEach(el => {
+      const src = el.getAttribute('src');
+      if (src && !src.startsWith('data:') && !src.startsWith('http://') && !src.startsWith('https://')) {
+        tasks.push({ el, attr: 'src', ref: src, isCSS: false });
+      }
+    });
+
+    // <img srcset="...">
+    doc.querySelectorAll('img[srcset], source[srcset]').forEach(el => {
+      // srcset handled separately below
+      tasks.push({ el, attr: 'srcset', ref: el.getAttribute('srcset'), isCSS: false, isSrcset: true });
+    });
+
+    const total = tasks.length;
+    let loaded = 0;
+
+    // Process CSS in <style> tags
+    const styleTags = doc.querySelectorAll('style');
+    for (const styleEl of styleTags) {
+      if (styleEl.textContent.trim()) {
+        styleEl.textContent = await resolveCss(styleEl.textContent, basePath, fileTree, api, owner, repo);
+      }
+    }
+
+    // Process each resource
+    for (const task of tasks) {
+      try {
+        if (task.isSrcset) {
+          // Handle srcset: "img1.png 1x, img2.png 2x"
+          const srcsetParts = task.ref.split(',').map(s => s.trim());
+          const resolvedParts = [];
+          for (const part of srcsetParts) {
+            const [ref, ...descriptor] = part.split(/\s+/);
+            if (ref && !ref.startsWith('data:') && !ref.startsWith('http://') && !ref.startsWith('https://')) {
+              const resolved = resolveUrl(ref, basePath);
+              const blobUrl = await fetchAsBlobUrl(resolved, fileTree, api, owner, repo);
+              if (blobUrl) {
+                resolvedParts.push([blobUrl, ...descriptor].join(' '));
+              } else {
+                resolvedParts.push(part);
+              }
+            } else {
+              resolvedParts.push(part);
+            }
+          }
+          task.el.setAttribute('srcset', resolvedParts.join(', '));
+        } else if (task.isCSS) {
+          // CSS: fetch as text, resolve internal url() references, then make blob URL
+          const resolved = resolveUrl(task.ref, basePath);
+          const cssText = await fetchAsText(resolved, fileTree, api, owner, repo);
+          if (cssText) {
+            const cssDir = dirName(resolved);
+            const resolvedCss = await resolveCss(cssText, cssDir, fileTree, api, owner, repo);
+            const blob = new Blob([resolvedCss], { type: 'text/css' });
+            task.el.setAttribute(task.attr, URL.createObjectURL(blob));
+          }
+        } else {
+          const resolved = resolveUrl(task.ref, basePath);
+          const blobUrl = await fetchAsBlobUrl(resolved, fileTree, api, owner, repo);
+          if (blobUrl) {
+            task.el.setAttribute(task.attr, blobUrl);
+          }
+        }
+      } catch (e) {
+        console.warn(`Failed to resolve resource: ${task.ref}`, e);
+      }
+
+      loaded++;
+      if (onProgress) onProgress(loaded, total, task.ref);
+    }
+
+    // Resolve inline style="...url(...)..." attributes
+    const styledEls = doc.querySelectorAll('[style]');
+    for (const el of styledEls) {
+      const style = el.getAttribute('style');
+      if (style && style.includes('url(')) {
+        const resolvedStyle = await resolveCssInline(style, basePath, fileTree, api, owner, repo);
+        el.setAttribute('style', resolvedStyle);
+      }
+    }
+
+    // Inject navigation script for iframe link interception
+    const navScript = doc.createElement('script');
+    navScript.textContent = `
+      document.addEventListener('click', function(e) {
+        var a = e.target.closest('a[href]');
+        if (!a) return;
+        var href = a.getAttribute('href');
+        if (!href || href.startsWith('http://') || href.startsWith('https://') ||
+            href.startsWith('mailto:') || href.startsWith('#') || href.startsWith('javascript:')) return;
+        e.preventDefault();
+        parent.postMessage({ type: 'navigate', href: href }, '*');
+      });
+    `;
+    doc.body.appendChild(navScript);
+
+    // Serialize back to HTML string
+    return '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
+  }
+
+  /**
+   * Resolve url() in an inline style attribute
+   */
+  async function resolveCssInline(styleStr, baseDir, fileTree, api, owner, repo) {
+    const urlRegex = /url\(\s*(['"]?)([^'")]+)\1\s*\)/g;
+    let match;
+    let result = styleStr;
+
+    while ((match = urlRegex.exec(styleStr)) !== null) {
+      const ref = match[2];
+      if (ref && !ref.startsWith('data:') && !ref.startsWith('blob:') && !ref.startsWith('http://') && !ref.startsWith('https://')) {
+        const resolved = resolveUrl(ref, baseDir);
+        const blobUrl = await fetchAsBlobUrl(resolved, fileTree, api, owner, repo);
+        if (blobUrl) {
+          result = result.replace(match[0], `url(${match[1]}${blobUrl}${match[1]})`);
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Clean up all cached blob URLs
+   */
+  function cleanup() {
+    for (const url of blobUrlCache.values()) {
+      URL.revokeObjectURL(url);
+    }
+    blobUrlCache.clear();
+  }
+
+  return {
+    resolveHtml,
+    resolveCss,
+    cleanup,
+    normalizePath,
+  };
+})();
+
+/**
+ * App Orchestrator - ties together URL parsing, Git API, Resource Resolver, and UI
+ */
+
+(function () {
+  // ── DOM refs ──
+  const urlInput = document.getElementById('url-input');
+  const renderBtn = document.getElementById('render-btn');
+  const settingsToggle = document.getElementById('settings-toggle');
+  const settingsPanel = document.getElementById('settings-panel');
+  const tokenDomain = document.getElementById('token-domain');
+  const tokenInput = document.getElementById('token-input');
+  const tokenSaveBtn = document.getElementById('token-save');
+  const statusBar = document.getElementById('status-bar');
+  const statusText = document.getElementById('status-text');
+  const progressFill = document.getElementById('progress-fill');
+  const errorPanel = document.getElementById('error-panel');
+  const errorMsg = document.getElementById('error-msg');
+  const errorClose = document.getElementById('error-close');
+  const previewFrame = document.getElementById('preview-frame');
+  const welcomeScreen = document.getElementById('welcome');
+
+  // Current render context (for in-iframe navigation)
+  let currentCtx = null;
+
+  // ── Init ──
+
+  function init() {
+    setupEventListeners();
+    checkHashAndRender();
+  }
+
+  function setupEventListeners() {
+    renderBtn.addEventListener('click', () => render());
+    urlInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') render();
+    });
+
+    settingsToggle.addEventListener('click', () => {
+      settingsPanel.classList.toggle('open');
+    });
+
+    tokenSaveBtn.addEventListener('click', saveToken);
+
+    errorClose.addEventListener('click', () => {
+      errorPanel.classList.remove('visible');
+    });
+
+    window.addEventListener('hashchange', checkHashAndRender);
+
+    // Listen for navigation messages from iframe
+    window.addEventListener('message', (e) => {
+      if (e.data && e.data.type === 'navigate') {
+        handleIframeNavigation(e.data.href);
+      }
+    });
+  }
+
+  // ── Token management ──
+
+  function getToken(domain) {
+    return localStorage.getItem(`token:${domain}`) || '';
+  }
+
+  function saveToken() {
+    const domain = tokenDomain.value.trim();
+    const token = tokenInput.value.trim();
+    if (!domain) return;
+
+    if (token) {
+      localStorage.setItem(`token:${domain}`, token);
+    } else {
+      localStorage.removeItem(`token:${domain}`);
+    }
+    tokenInput.value = '';
+    showStatus(`${domain} 토큰 저장됨`);
+  }
+
+  // ── Render flow ──
+
+  function checkHashAndRender() {
+    const hash = location.hash.slice(1);
+    if (hash) {
+      urlInput.value = decodeURIComponent(hash);
+      render();
+    }
+  }
+
+  async function render() {
+    const url = urlInput.value.trim();
+    if (!url) return;
+
+    hideError();
+    renderBtn.disabled = true;
+    renderBtn.textContent = '로딩...';
+
+    try {
+      // 1. Parse URL
+      const parsed = parseGitUrl(url);
+
+      // Update token input hint
+      const domain = new URL(parsed.origin).hostname;
+      tokenDomain.value = domain;
+
+      // 2. Get token
+      const token = getToken(domain);
+
+      // 3. Create API client
+      const api = new GitAPI(parsed.provider, parsed.origin, token);
+
+      // 4. Resolve branch
+      let branch = parsed.branch;
+      if (!branch) {
+        showStatus('기본 브랜치 조회 중...');
+        branch = await api.getDefaultBranch(parsed.owner, parsed.repo);
+      }
+
+      // 5. Get file tree
+      showStatus('파일 트리 조회 중...');
+      const tree = await api.getTree(parsed.owner, parsed.repo, branch);
+      const blobs = tree.filter(f => f.type === 'blob');
+
+      if (blobs.length === 0) {
+        throw new Error('이 저장소에 파일이 없습니다');
+      }
+
+      // Build path → sha map
+      const fileTree = new Map();
+      for (const item of blobs) {
+        fileTree.set(item.path, item.sha);
+      }
+
+      // 6. Find entry file within basePath
+      const basePath = parsed.path || '';
+      const entryFile = findEntryFile(blobs, basePath);
+      if (!entryFile) {
+        throw new Error('이 경로에 HTML 파일이 없습니다');
+      }
+
+      // Save context for in-iframe navigation
+      currentCtx = {
+        api, owner: parsed.owner, repo: parsed.repo,
+        fileTree, basePath,
+      };
+
+      // 7. Render the entry file
+      await renderHtmlFile(entryFile, currentCtx);
+
+      // 8. Update URL hash
+      location.hash = '#' + encodeURIComponent(url);
+
+    } catch (err) {
+      showError(err.message);
+    } finally {
+      renderBtn.disabled = false;
+      renderBtn.textContent = 'Render';
+    }
+  }
+
+  /**
+   * Fetch an HTML file from Git, resolve all resources, and display in iframe
+   */
+  async function renderHtmlFile(filePath, ctx) {
+    showStatus(`리소스 로딩 중... (${filePath})`);
+    showProgress();
+
+    // Cleanup previous blob URLs
+    ResourceResolver.cleanup();
+
+    // Fetch the HTML file as text
+    const sha = ctx.fileTree.get(filePath);
+    if (!sha) {
+      throw new Error(`파일을 찾을 수 없습니다: ${filePath}`);
+    }
+
+    const blobData = await ctx.api.getBlob(ctx.owner, ctx.repo, sha);
+    let htmlText;
+    if (blobData.raw) {
+      htmlText = new TextDecoder('utf-8').decode(blobData.raw);
+    } else {
+      const binaryString = atob(blobData.content.replace(/\n/g, ''));
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      htmlText = new TextDecoder('utf-8').decode(bytes);
+    }
+
+    // Resolve all resource references to blob URLs
+    const htmlDir = filePath.lastIndexOf('/') >= 0
+      ? filePath.substring(0, filePath.lastIndexOf('/'))
+      : '';
+
+    const resolvedHtml = await ResourceResolver.resolveHtml(
+      htmlText, htmlDir, ctx.fileTree, ctx.api, ctx.owner, ctx.repo,
+      (loaded, total, path) => {
+        updateProgress(loaded, total, path);
+      }
+    );
+
+    // Create blob URL for the final HTML and set as iframe src
+    const htmlBlob = new Blob([resolvedHtml], { type: 'text/html' });
+    const htmlUrl = URL.createObjectURL(htmlBlob);
+
+    welcomeScreen.classList.add('hidden');
+    previewFrame.classList.remove('hidden');
+    previewFrame.src = htmlUrl;
+
+    showStatus(`렌더링 완료 (${filePath})`);
+    setTimeout(() => {
+      statusBar.classList.remove('visible');
+    }, 1500);
+  }
+
+  /**
+   * Handle navigation messages from within the iframe
+   */
+  async function handleIframeNavigation(href) {
+    if (!currentCtx) return;
+
+    try {
+      // Resolve the href relative to basePath
+      const targetPath = ResourceResolver.normalizePath(
+        currentCtx.basePath ? currentCtx.basePath + '/' + href : href
+      );
+
+      if (!currentCtx.fileTree.has(targetPath)) {
+        showError(`파일을 찾을 수 없습니다: ${targetPath}`);
+        return;
+      }
+
+      renderBtn.disabled = true;
+      renderBtn.textContent = '로딩...';
+      await renderHtmlFile(targetPath, currentCtx);
+    } catch (err) {
+      showError(err.message);
+    } finally {
+      renderBtn.disabled = false;
+      renderBtn.textContent = 'Render';
+    }
+  }
+
+  function findEntryFile(blobs, basePath) {
+    const candidates = ['index.html', 'index.htm', 'default.html'];
+    const paths = blobs.map(b => b.path);
+
+    for (const candidate of candidates) {
+      const full = basePath ? `${basePath}/${candidate}` : candidate;
+      if (paths.includes(full)) return full;
+    }
+
+    // Fallback: first HTML file in basePath
+    const prefix = basePath ? basePath + '/' : '';
+    const htmlFile = paths.find(p =>
+      p.startsWith(prefix) && (p.endsWith('.html') || p.endsWith('.htm'))
+    );
+    return htmlFile || null;
+  }
+
+  // ── UI helpers ──
+
+  function showStatus(text) {
+    statusBar.classList.add('visible');
+    statusText.textContent = text;
+  }
+
+  function showProgress() {
+    progressFill.style.width = '0%';
+  }
+
+  function updateProgress(loaded, total, filePath) {
+    if (total > 0) {
+      const pct = Math.round((loaded / total) * 100);
+      progressFill.style.width = pct + '%';
+      statusText.textContent = `${loaded}/${total} ${filePath}`;
+    }
+  }
+
+  function showError(msg) {
+    errorPanel.classList.add('visible');
+    errorMsg.textContent = msg;
+    statusBar.classList.remove('visible');
+  }
+
+  function hideError() {
+    errorPanel.classList.remove('visible');
+  }
+
+  // ── Start ──
+
+  init();
+})();
+  </script>
+</body>
+</html>

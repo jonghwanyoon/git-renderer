@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Git Renderer</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Top bar -->
+    <div class="top-bar">
+      <span class="logo">Git Renderer</span>
+      <input
+        id="url-input"
+        type="text"
+        placeholder="Git 저장소 URL을 입력하세요 (예: https://gitlab.company.com/group/project/-/tree/main/docs)"
+        spellcheck="false"
+        autocomplete="off"
+      >
+      <button id="render-btn">Render</button>
+      <button id="settings-toggle">Token</button>
+    </div>
+
+    <!-- Settings panel (collapsible) -->
+    <div id="settings-panel" class="settings-panel">
+      <h3>API Token (도메인별 저장)</h3>
+      <div class="token-row">
+        <label>Domain:</label>
+        <input id="token-domain" type="text" placeholder="gitlab.company.com">
+      </div>
+      <div class="token-row">
+        <label>Token:</label>
+        <input id="token-input" type="password" placeholder="glpat-xxxx 또는 ghp_xxxx">
+        <button id="token-save">Save</button>
+      </div>
+    </div>
+
+    <!-- Status bar -->
+    <div id="status-bar" class="status-bar">
+      <span id="status-text"></span>
+      <div class="progress">
+        <div id="progress-fill" class="progress-fill"></div>
+      </div>
+    </div>
+
+    <!-- Error panel -->
+    <div id="error-panel" class="error-panel">
+      <span id="error-msg" class="error-msg"></span>
+      <button id="error-close" class="close-btn">&times;</button>
+    </div>
+
+    <!-- Welcome screen -->
+    <div id="welcome" class="welcome">
+      <div>
+        <h2>Git Renderer</h2>
+        <p>
+          Git 저장소의 웹 콘텐츠를 바로 렌더링합니다.<br>
+          위 입력란에 GitLab 또는 GitHub URL을 입력하세요.<br><br>
+          URL 형식: <code>#https://gitlab.company.com/group/project/-/tree/main/docs</code><br>
+          브라우저 단축키: <code>gr https://gitlab.company.com/...</code>
+        </p>
+      </div>
+    </div>
+
+    <!-- Preview iframe (hidden until render) -->
+    <iframe
+      id="preview-frame"
+      class="hidden"
+      sandbox="allow-scripts allow-same-origin allow-forms"
+    ></iframe>
+  </div>
+
+  <script src="js/mime-types.js"></script>
+  <script src="js/url-parser.js"></script>
+  <script src="js/git-api.js"></script>
+  <script src="js/resource-resolver.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

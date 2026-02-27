@@ -1,0 +1,264 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f5f5f5;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ── Top bar ── */
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #1e1e2e;
+  color: #cdd6f4;
+  flex-shrink: 0;
+}
+
+.top-bar .logo {
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+  color: #89b4fa;
+}
+
+#url-input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #45475a;
+  border-radius: 4px;
+  background: #313244;
+  color: #cdd6f4;
+  font-size: 13px;
+  outline: none;
+  min-width: 0;
+}
+
+#url-input:focus {
+  border-color: #89b4fa;
+}
+
+#url-input::placeholder {
+  color: #6c7086;
+}
+
+#render-btn {
+  padding: 6px 16px;
+  background: #89b4fa;
+  color: #1e1e2e;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+#render-btn:hover {
+  background: #74c7ec;
+}
+
+#render-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#settings-toggle {
+  padding: 6px 10px;
+  background: transparent;
+  color: #6c7086;
+  border: 1px solid #45475a;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+#settings-toggle:hover {
+  color: #cdd6f4;
+  border-color: #6c7086;
+}
+
+/* ── Settings panel ── */
+
+.settings-panel {
+  display: none;
+  padding: 12px;
+  background: #181825;
+  border-bottom: 1px solid #313244;
+  flex-shrink: 0;
+}
+
+.settings-panel.open {
+  display: block;
+}
+
+.settings-panel h3 {
+  font-size: 13px;
+  color: #a6adc8;
+  margin-bottom: 8px;
+}
+
+.token-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.token-row label {
+  font-size: 12px;
+  color: #6c7086;
+  min-width: 120px;
+}
+
+.token-row input {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid #45475a;
+  border-radius: 3px;
+  background: #313244;
+  color: #cdd6f4;
+  font-size: 12px;
+  font-family: monospace;
+  outline: none;
+}
+
+.token-row input:focus {
+  border-color: #89b4fa;
+}
+
+.token-row button {
+  padding: 4px 10px;
+  background: #45475a;
+  color: #cdd6f4;
+  border: none;
+  border-radius: 3px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.token-row button:hover {
+  background: #585b70;
+}
+
+/* ── Status bar ── */
+
+.status-bar {
+  display: none;
+  padding: 4px 12px;
+  background: #313244;
+  font-size: 12px;
+  color: #a6adc8;
+  flex-shrink: 0;
+}
+
+.status-bar.visible {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-bar .progress {
+  flex: 1;
+  height: 3px;
+  background: #45475a;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.status-bar .progress-fill {
+  height: 100%;
+  background: #89b4fa;
+  border-radius: 2px;
+  transition: width 0.2s;
+  width: 0%;
+}
+
+/* ── Error panel ── */
+
+.error-panel {
+  display: none;
+  padding: 10px 12px;
+  background: #45273a;
+  color: #f38ba8;
+  font-size: 13px;
+  border-bottom: 1px solid #f38ba8;
+  flex-shrink: 0;
+}
+
+.error-panel.visible {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.error-panel .error-msg {
+  flex: 1;
+}
+
+.error-panel .close-btn {
+  background: none;
+  border: none;
+  color: #f38ba8;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+/* ── Preview iframe ── */
+
+#preview-frame {
+  flex: 1;
+  border: none;
+  background: #fff;
+  width: 100%;
+}
+
+/* ── Welcome screen ── */
+
+.welcome {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #6c7086;
+  padding: 40px;
+}
+
+.welcome h2 {
+  font-size: 20px;
+  color: #cdd6f4;
+  margin-bottom: 12px;
+}
+
+.welcome p {
+  font-size: 14px;
+  line-height: 1.6;
+  max-width: 500px;
+}
+
+.welcome code {
+  background: #313244;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 13px;
+  color: #89b4fa;
+}
+
+.hidden {
+  display: none !important;
+}
