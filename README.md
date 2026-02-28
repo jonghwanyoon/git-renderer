@@ -61,6 +61,14 @@ Click the **Token** button and save an API token per domain:
 
 Tokens are stored in `localStorage` and only sent to the respective Git API. No data is ever sent to any third party.
 
+## Self-hosted / Intranet GitLab
+
+When git-renderer is hosted on a different domain (e.g., GitHub Pages) from your GitLab instance, the browser blocks API requests due to **CORS** (Cross-Origin Resource Sharing) policy.
+
+**Simplest fix**: Download `git-renderer.html` and open it locally (`file:///...`). Local files are not subject to CORS restrictions.
+
+For more details and alternative solutions, see the [CORS Troubleshooting Guide](docs/cors-guide.md).
+
 ## How It Works
 
 1. Parse the Git URL to extract provider, owner, repo, branch, and path

@@ -61,6 +61,14 @@ https://gitlab.example.com/group/project/-/tree/main/docs
 
 토큰은 `localStorage`에 저장되며, 해당 Git API에만 전송됩니다. 어떤 데이터도 제3자에게 전송되지 않습니다.
 
+## 사내 / 인트라넷 GitLab
+
+git-renderer를 GitLab과 다른 도메인(예: GitHub Pages)에서 호스팅하면, 브라우저의 **CORS**(Cross-Origin Resource Sharing) 정책에 의해 API 요청이 차단됩니다.
+
+**가장 간단한 해결법**: `git-renderer.html` 파일을 다운로드하여 로컬에서 열기(`file:///...`). 로컬 파일은 CORS 제한을 받지 않습니다.
+
+자세한 내용과 다른 해결 방법은 [CORS 문제 해결 가이드](docs/cors-guide.ko.md)를 참고하세요.
+
 ## 동작 원리
 
 1. Git URL을 파싱하여 provider, owner, repo, branch, path 추출

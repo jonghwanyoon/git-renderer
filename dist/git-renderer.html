@@ -506,7 +506,23 @@ class GitAPI {
   }
 
   async _fetch(url) {
-    const resp = await fetch(url, { headers: this._headers() });
+    let resp;
+    try {
+      resp = await fetch(url, { headers: this._headers() });
+    } catch (e) {
+      // CORS or network error — fetch throws TypeError on CORS failure
+      const targetHost = new URL(url).hostname;
+      const currentHost = location.hostname;
+      if (currentHost && currentHost !== targetHost) {
+        throw new ApiError(
+          `${targetHost}에 연결할 수 없습니다. ` +
+          `다른 도메인(${currentHost})에서 요청하면 브라우저 보안(CORS)에 의해 차단됩니다. ` +
+          `해결: git-renderer.html 파일을 다운로드하여 로컬에서 열어보세요.`,
+          0
+        );
+      }
+      throw new ApiError(`${targetHost}에 연결할 수 없습니다. 네트워크를 확인하세요.`, 0);
+    }
 
     // Track rate limit info
     if (resp.headers.has('x-ratelimit-remaining')) {
