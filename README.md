@@ -2,6 +2,8 @@
 
 [한국어](README.ko.md) | English
 
+View unhosted static web pages directly in the browser and share them with just a link.
+
 Render web content from any Git repository directly in the browser — no server required.
 
 A single HTML file that fetches HTML/CSS/JS/images from GitHub or GitLab repositories via their public APIs, resolves all resource references to blob URLs, and renders the result in an iframe.
